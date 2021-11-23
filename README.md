@@ -67,3 +67,7 @@ pinda-authority              #聚合工程，用于聚合pd-parent、pd-apps、p
 | pd-authority-ui| 8080 | 前端工程 | npm run dev |
 
 由于本系统是基于当前非常流行的前后端分离开发方式开发，其中前端部分是由专门的前端开发人员负责。
+
+后端工程：
+- 账号：pinda
+- 密码：pinda123
