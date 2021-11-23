@@ -13,17 +13,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.cloud.netflix.zuul.filters.support.FilterConstants;
 import org.springframework.stereotype.Component;
+
 import javax.servlet.http.HttpServletRequest;
 
 /**
  * 当前过滤器负责解析请求头中的jwt令牌并且将解析出的用户信息放入zuul的header中
+ *
+ * @author Administrator
  */
 @Component
 public class TokenContextFilter extends BaseFilter {
+
     @Autowired
     private AuthClientProperties authClientProperties;
+
     @Autowired
     private JwtTokenClientUtils jwtTokenClientUtils;
+
     //前置过滤器
     @Override
     public String filterType() {
@@ -45,7 +51,7 @@ public class TokenContextFilter extends BaseFilter {
     //过滤逻辑
     @Override
     public Object run() throws ZuulException {
-        if(isIgnoreToken()){
+        if (isIgnoreToken()) {
             //直接放行
             return null;
         }
@@ -60,11 +66,11 @@ public class TokenContextFilter extends BaseFilter {
         //解析jwt令牌
         try {
             userInfo = jwtTokenClientUtils.getUserInfo(userToken);
-        }catch (BizException e){
-            errorResponse(e.getMessage(),e.getCode(),200);
+        } catch (BizException e) {
+            errorResponse(e.getMessage(), e.getCode(), 200);
             return null;
-        }catch (Exception e){
-            errorResponse("解析jwt令牌出错", R.FAIL_CODE,200);
+        } catch (Exception e) {
+            errorResponse("解析jwt令牌出错", R.FAIL_CODE, 200);
             return null;
         }
 

@@ -6,6 +6,11 @@ pinda:
     port: ${NACOS_PORT:@pom.nacos.port@}
     namespace: ${NACOS_ID:@pom.nacos.namespace@}
 
+server:
+  port: 8760
+  servlet:
+    context-path: /api
+
 spring:
   main:
     allow-bean-definition-overriding: true

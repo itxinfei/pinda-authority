@@ -18,7 +18,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
  * 1，存在web环境
  * 2，配置文件中pinda.log.enabled=true
  * 3，配置文件中不存在：pinda.log.enabled 值
- *
  */
 @EnableAsync
 @Configuration

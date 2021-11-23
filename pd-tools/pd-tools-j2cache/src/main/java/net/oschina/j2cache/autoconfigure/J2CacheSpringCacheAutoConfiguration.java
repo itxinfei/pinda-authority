@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * 开启对spring cache支持的配置入口
  *
+ * @author Administrator
  */
 @Configuration
 @ConditionalOnClass(J2Cache.class)

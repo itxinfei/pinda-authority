@@ -8,12 +8,14 @@
         <version>2.2.2.RELEASE</version>
         <relativePath/>
     </parent>
+
     <groupId>com.itheima</groupId>
     <artifactId>pd-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <description>Spring Boot 2.0项目依赖管理</description>
+
     <licenses>
         <license>
             <name>Apache 2</name>
@@ -22,6 +24,7 @@
             <comments>A business-friendly OSS license</comments>
         </license>
     </licenses>
+
     <!-- 环境 -->
     <profiles>
         <!-- 开发 -->
@@ -36,9 +39,10 @@
                 <pom.profile.name>dev</pom.profile.name>
                 <!--Nacos配置中心地址-->
                 <pom.nacos.ip>127.0.0.1</pom.nacos.ip>
+                <!--Nacos配置中心端口-->
                 <pom.nacos.port>8848</pom.nacos.port>
                 <!--Nacos配置中心命名空间,用于支持多环境.这里必须使用ID，不能使用名称,默认为空-->
-                <pom.nacos.namespace>09d0e14f-107f-4fea-8f80-e59e0cc63694</pom.nacos.namespace>
+                <pom.nacos.namespace>78149618-da54-4184-81a6-43b68d18d529</pom.nacos.namespace>
             </properties>
         </profile>
         <!-- docker 环境 -->
@@ -67,7 +71,6 @@
         </profile>
     </profiles>
 
-
     <repositories>
         <repository>
             <id>aliyun</id>
@@ -85,6 +88,7 @@
             <url>https://oss.sonatype.org/content/groups/public</url>
         </repository>
     </repositories>
+
     <distributionManagement>
         <repository>
             <id>repo.spring.io</id>
@@ -97,6 +101,7 @@
             <url>https://repo.spring.io/libs-snapshot-local</url>
         </snapshotRepository>
     </distributionManagement>
+
     <properties>
         <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -105,7 +110,7 @@
         <spring.cloud.version>Hoxton.SR1</spring.cloud.version>
         <spring-cloud-alibaba-dependencies.version>2.1.1.RELEASE</spring-cloud-alibaba-dependencies.version>
         <spring.version>5.2.2.RELEASE</spring.version>
-        <spring-boot-admin.version>2.2.0</spring-boot-admin.version>
+        <spring-boot-admin.version>2.1.5</spring-boot-admin.version>
         <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
         <mybatis.version>3.5.2</mybatis.version>
         <mybatis.typehandlers.version>1.0.2</mybatis.typehandlers.version>
@@ -121,7 +126,7 @@
         <lombok.version>1.18.10</lombok.version>
         <easy-captcha.version>1.6.2</easy-captcha.version>
         <guava.version>20.0</guava.version>
-        <tobato-fastdfs-client.version>1.26.6</tobato-fastdfs-client.version>
+        <tobato-fastdfs-client.version>1.26.6-SNAPSHOT</tobato-fastdfs-client.version>
         <qiniu-java-sdk>7.2.18</qiniu-java-sdk>
         <j2cache.version>2.8.0-release</j2cache.version>
         <hibernate.validator.version>6.1.0.Final</hibernate.validator.version>
@@ -135,9 +140,8 @@
         <groovy-all.version>2.5.5</groovy-all.version>
         <jjwt.version>0.7.0</jjwt.version>
         <qcloudsms.version>1.0.6</qcloudsms.version>
-        <bce-java-sdk.version>0.10.21</bce-java-sdk.version>
-
-
+        <!-- <bce-java-sdk.version>0.10.21</bce-java-sdk.version>v0.10.181-->
+        <bce-java-sdk.version>0.10.181</bce-java-sdk.version>
         <hutool.version>5.1.0</hutool.version>
         <antisamy.version>1.5.7</antisamy.version>
         <caffeine.version>2.8.0</caffeine.version>
@@ -152,7 +156,6 @@
     </properties>
 
     <dependencyManagement>
-
         <dependencies>
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
@@ -161,6 +164,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
             <dependency>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-framework-bom</artifactId>
@@ -188,18 +192,19 @@
                 <artifactId>UserAgentUtils</artifactId>
                 <version>${bitwalker.version}</version>
             </dependency>
-
             <!-- 持久层相关 -->
             <dependency>
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-boot-starter</artifactId>
                 <version>${mybatisplus.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus</artifactId>
                 <version>${mybatisplus.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>org.mybatis</groupId>
                 <artifactId>mybatis-typehandlers-jsr310</artifactId>
@@ -210,16 +215,19 @@
             <!--                <artifactId>druid</artifactId>-->
             <!--                <version>${druid.version}</version>-->
             <!--            </dependency>-->
+
             <dependency>
                 <groupId>com.alibaba</groupId>
                 <artifactId>druid-spring-boot-starter</artifactId>
                 <version>${druid.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>p6spy</groupId>
                 <artifactId>p6spy</artifactId>
                 <version>${p6spy.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
@@ -244,6 +252,7 @@
                 <artifactId>fastdfs-client</artifactId>
                 <version>${tobato-fastdfs-client.version}</version>
             </dependency>
+
             <!-- 七牛依赖 -->
             <dependency>
                 <groupId>com.qiniu</groupId>
@@ -270,6 +279,7 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+
             <dependency>
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-annotations</artifactId>
@@ -281,11 +291,13 @@
                 <artifactId>swagger-models</artifactId>
                 <version>${swagger.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>io.springfox</groupId>
                 <artifactId>springfox-bean-validators</artifactId>
                 <version>${springfox.swagger2.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>io.springfox</groupId>
                 <artifactId>springfox-core</artifactId>
@@ -302,12 +314,12 @@
                 <artifactId>knife4j-spring-boot-starter</artifactId>
                 <version>${knife4j.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>com.github.xiaoymin</groupId>
                 <artifactId>knife4j-spring-ui</artifactId>
                 <version>${knife4j.version}</version>
             </dependency>
-
 
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
@@ -321,11 +333,13 @@
                 <artifactId>qcloudsms</artifactId>
                 <version>${qcloudsms.version}</version>
             </dependency>
+
             <!-- 百度 -->
             <dependency>
                 <groupId>com.baidubce</groupId>
                 <artifactId>bce-java-sdk</artifactId>
-                <version>${bce-java-sdk.version}</version>
+                <!--<version>${bce-java-sdk.version}</version>-->
+                <version>0.10.181</version>
             </dependency>
 
             <!-- jackson 序列化 -->
@@ -335,6 +349,7 @@
                 <version>${jackson.version}</version>
                 <scope>compile</scope>
             </dependency>
+
             <dependency>
                 <groupId>com.fasterxml.jackson.module</groupId>
                 <artifactId>jackson-module-parameter-names</artifactId>
@@ -347,11 +362,13 @@
                 <artifactId>spring-boot-admin-starter-server</artifactId>
                 <version>${spring-boot-admin.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>de.codecentric</groupId>
                 <artifactId>spring-boot-admin-server-ui</artifactId>
                 <version>${spring-boot-admin.version}</version>
             </dependency>
+
             <!--<dependency>-->
             <!--<groupId>de.codecentric</groupId>-->
             <!--<artifactId>spring-boot-admin-starter-client</artifactId>-->
@@ -404,6 +421,7 @@
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -421,7 +439,6 @@
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>
         </dependency>
-
 
     </dependencies>
 

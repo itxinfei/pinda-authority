@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 /**
  * 资源API熔断
+ * @author Administrator
  */
 @Component
 public class ResourceApiFallback implements ResourceApi {
