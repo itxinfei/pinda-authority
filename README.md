@@ -62,7 +62,7 @@ Nacos 是唯一必需的中间件，服务端口、数据源、JWT 密钥路径�
 <pom.nacos.namespace>你的命名空间ID</pom.nacos.namespace>
 ```
 
-> `nacos_config.zip` 属于本地环境配置，已不纳入版本管理，需自行保留。
+> `nacos_config.zip` 是默认本地环境配置（数据源、Redis 地址为 `127.0.0.1`），按自己环境改 `mysql.yml`、`redis.yml` 后再导入；不含任何云厂商凭据。
 
 ### 2. 生成 RSA 密钥对
 
