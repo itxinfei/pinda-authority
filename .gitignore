@@ -24,3 +24,7 @@ unpackage/
 *.keystore
 *.p12
 *.key
+# 本地留存 SDK 包不入库（依赖走 Maven 中央仓）
+# nacos_config.zip 为配置导入包，保留
+!nacos_config.zip
+docs/*.jar
