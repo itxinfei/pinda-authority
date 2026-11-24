@@ -28,3 +28,6 @@ unpackage/
 # nacos_config.zip 为配置导入包，保留
 !nacos_config.zip
 docs/*.jar
+# 重复下载生成的 (1)(2) 副本
+*(1).*
+*(2).*
