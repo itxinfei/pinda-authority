@@ -1,13 +1,10 @@
 package com.itheima.pinda.authority.controller.auth;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.itheima.pinda.authority.dto.auth.*;
-import com.itheima.pinda.authority.entity.auth.Role;
 import com.itheima.pinda.authority.entity.auth.User;
 import com.itheima.pinda.authority.entity.core.Org;
-import com.itheima.pinda.authority.biz.service.auth.RoleService;
 import com.itheima.pinda.authority.biz.service.auth.UserService;
 import com.itheima.pinda.authority.biz.service.core.OrgService;
-import com.itheima.pinda.authority.biz.service.core.StationService;
 import com.itheima.pinda.base.BaseController;
 import com.itheima.pinda.base.R;
 import com.itheima.pinda.base.entity.SuperEntity;
@@ -15,11 +12,6 @@ import com.itheima.pinda.database.mybatis.conditions.Wraps;
 import com.itheima.pinda.database.mybatis.conditions.query.LbqWrapper;
 import com.itheima.pinda.dozer.DozerUtils;
 import com.itheima.pinda.log.annotation.SysLog;
-import com.itheima.pinda.user.feign.UserQuery;
-import com.itheima.pinda.user.model.SysOrg;
-import com.itheima.pinda.user.model.SysRole;
-import com.itheima.pinda.user.model.SysStation;
-import com.itheima.pinda.user.model.SysUser;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
@@ -45,10 +37,6 @@ public class UserController extends BaseController {
     private UserService userService;
     @Autowired
     private OrgService orgService;
-    @Autowired
-    private RoleService roleService;
-    @Autowired
-    private StationService stationService;
     @Autowired
     private DozerUtils dozer;
     /**
@@ -164,33 +152,6 @@ public class UserController extends BaseController {
         return success(true);
     }
 
-
-    /**
-     * 单体查询用户
-     */
-    @ApiOperation(value = "查询用户详细", notes = "查询用户详细")
-    @PostMapping(value = "/anno/id/{id}")
-    public R<SysUser> getById(@PathVariable Long id, @RequestBody UserQuery query) {
-        User user = userService.getById(id);
-        if (user == null) {
-            return success(null);
-        }
-        SysUser sysUser = dozer.map(user, SysUser.class);
-
-        if (query.getFull() || query.getOrg()) {
-            sysUser.setOrg(dozer.map(orgService.getById(user.getOrgId()), SysOrg.class));
-        }
-        if (query.getFull() || query.getStation()) {
-            sysUser.setStation(dozer.map(stationService.getById(user.getStationId()), SysStation.class));
-        }
-
-        if (query.getFull() || query.getRoles()) {
-            List<Role> list = roleService.findRoleByUserId(id);
-            sysUser.setRoles(dozer.mapList(list, SysRole.class));
-        }
-
-        return success(sysUser);
-    }
 
     /**
      * 查询角色的已关联用户

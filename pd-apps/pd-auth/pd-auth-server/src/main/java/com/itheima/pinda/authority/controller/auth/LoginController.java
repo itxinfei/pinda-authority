@@ -43,15 +43,10 @@ public class LoginController extends BaseController {
     @ApiOperation(notes = "登录", value = "登录")
     @SysLog("登录")
     public R<LoginDTO> login(@Validated @RequestBody LoginParamDTO loginParamDTO) {
-        //校验验证码是否正确
-        boolean check = validateCodeService.check(loginParamDTO.getKey(), loginParamDTO.getCode());
-        if (check) {
-            //验证码校验通过，执行具体的登录认证逻辑
-            R<LoginDTO> r = authManager.login(loginParamDTO.getAccount(), loginParamDTO.getPassword());
-            return r;
-        }
-        //验证码校验不通过，直接返回
-        return this.success(null);
+        //校验验证码：错误/过期时校验服务会抛出 BizException，由全局异常处理器统一返回失败响应
+        validateCodeService.check(loginParamDTO.getKey(), loginParamDTO.getCode());
+        //验证码校验通过，执行具体的登录认证逻辑
+        return authManager.login(loginParamDTO.getAccount(), loginParamDTO.getPassword());
     }
 
     //校验验证码

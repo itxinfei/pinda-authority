@@ -5,11 +5,6 @@ import com.itheima.pinda.auth.utils.JwtUserInfo;
 import com.itheima.pinda.auth.utils.Token;
 import com.itheima.pinda.exception.BizException;
 
-import com.itheima.pinda.auth.server.properties.AuthServerProperties;
-import com.itheima.pinda.auth.utils.JwtHelper;
-import com.itheima.pinda.auth.utils.JwtUserInfo;
-import com.itheima.pinda.auth.utils.Token;
-import com.itheima.pinda.exception.BizException;
 import lombok.AllArgsConstructor;
 /**
  * jwt token 工具

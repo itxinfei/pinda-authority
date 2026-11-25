@@ -1,4 +1,6 @@
 package com.itheima.pinda.authority.biz.service.auth.impl;
+import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -45,6 +47,8 @@ public class ResourceServiceImpl extends ServiceImpl<ResourceMapper, Resource> i
         }
         List<Long> idList = resources.stream().mapToLong(Resource::getId).boxed().collect(Collectors.toList());
         super.removeByIds(idList);
+        // 资源被级联删除后，清除网关缓存的"需要鉴权的资源列表"
+        evictResourceCache();
     }
 
     @Override
@@ -54,7 +58,39 @@ public class ResourceServiceImpl extends ServiceImpl<ResourceMapper, Resource> i
             throw BizException.validFail("编码[%s]重复", resource.getCode());
         }
         super.save(resource);
+        // 资源新增后，清除网关缓存的"需要鉴权的资源列表"，使其即时生效
+        evictResourceCache();
         return true;
+    }
+
+    @Override
+    public boolean updateById(Resource resource) {
+        boolean result = super.updateById(resource);
+        // 资源修改后，清除网关缓存的"需要鉴权的资源列表"
+        evictResourceCache();
+        return result;
+    }
+
+    @Override
+    public boolean removeByIds(Collection<? extends Serializable> idList) {
+        boolean result = super.removeByIds(idList);
+        // 资源删除后，清除网关缓存的"需要鉴权的资源列表"
+        evictResourceCache();
+        return result;
+    }
+
+    @Override
+    public boolean removeById(Serializable id) {
+        boolean result = super.removeById(id);
+        evictResourceCache();
+        return result;
+    }
+
+    /**
+     * 清除网关缓存的全局资源列表（跨节点经 j2cache 的 redis 广播生效）
+     */
+    private void evictResourceCache() {
+        cache.evict(CacheKey.RESOURCE, CacheKey.RESOURCE_NEED_TO_CHECK);
     }
 
     @Override

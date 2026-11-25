@@ -12,13 +12,14 @@ import java.util.List;
  */
 @Component
 public class ResourceApiFallback implements ResourceApi {
+
     @Override
     public R<List> list() {
-        return null;
+        return R.fail("权限服务不可用，无法获取资源列表");
     }
 
     @Override
     public R<List<Resource>> visible(ResourceQueryDTO resource) {
-        return null;
+        return R.fail("权限服务不可用，无法获取用户权限");
     }
 }

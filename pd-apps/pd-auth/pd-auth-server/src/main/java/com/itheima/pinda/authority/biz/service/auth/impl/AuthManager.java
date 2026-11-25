@@ -1,11 +1,15 @@
 package com.itheima.pinda.authority.biz.service.auth.impl;
 
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.extra.servlet.ServletUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.itheima.pinda.auth.server.utils.JwtTokenServerUtils;
 import com.itheima.pinda.auth.utils.JwtUserInfo;
 import com.itheima.pinda.auth.utils.Token;
 import com.itheima.pinda.authority.biz.service.auth.ResourceService;
 import com.itheima.pinda.authority.biz.service.auth.UserService;
+import com.itheima.pinda.authority.biz.service.common.LoginLogService;
+import com.itheima.pinda.authority.config.AuthorityProperties;
 import com.itheima.pinda.authority.dto.auth.LoginDTO;
 import com.itheima.pinda.authority.dto.auth.ResourceQueryDTO;
 import com.itheima.pinda.authority.dto.auth.UserDTO;
@@ -15,12 +19,14 @@ import com.itheima.pinda.base.R;
 import com.itheima.pinda.common.constant.CacheKey;
 import com.itheima.pinda.dozer.DozerUtils;
 import com.itheima.pinda.exception.code.ExceptionCode;
+import com.itheima.pinda.log.util.AddressUtil;
 import lombok.extern.slf4j.Slf4j;
 import net.oschina.j2cache.CacheChannel;
-import org.apache.commons.codec.digest.DigestUtils;
+import com.itheima.pinda.utils.PasswordUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,6 +37,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public class AuthManager {
     @Autowired
+    private AuthorityProperties authorityProperties;
+    @Autowired
     private UserService userService;
     @Autowired
     private DozerUtils dozerUtils;
@@ -40,6 +48,10 @@ public class AuthManager {
     private ResourceService resourceService;
     @Autowired
     private CacheChannel cacheChannel;
+    @Autowired
+    private LoginLogService loginLogService;
+    @Autowired
+    private HttpServletRequest request;
 
     //登录认证
     public R<LoginDTO> login(String account, String password) {
@@ -47,12 +59,20 @@ public class AuthManager {
         R<User> userR = check(account, password);
         Boolean isError = userR.getIsError();
         if (isError) {
-            return R.fail("认证失败");
+            //直接透传 check() 返回的具体失败原因（禁用/锁定/凭证错误），避免被笼统覆盖
+            return R.fail(userR.getCode(), userR.getMsg());
         }
 
         //为用户生成jwt令牌
         User user = userR.getData();
         Token token = generateUserToken(user);
+
+        //登录成功后由服务端落库登录日志（账号取自已认证用户，杜绝前端伪造/匿名写入）
+        String ua = StrUtil.sub(request.getHeader("user-agent"), 0, 500);
+        String ip = ServletUtil.getClientIP(request);
+        String location = AddressUtil.getRegion(ip);
+        userService.updateLoginTime(user.getAccount());
+        loginLogService.save(user.getAccount(), ua, ip, location, "登陆成功");
 
         //查询当前用户可以访问的资源权限
         List<Resource> userResource = resourceService.findVisibleResource(ResourceQueryDTO.builder().userId(user.getId()).build());
@@ -85,14 +105,33 @@ public class AuthManager {
     public R<User> check(String account, String password) {
         User user = userService.getOne(Wrappers.<User>lambdaQuery().eq(User::getAccount, account));
 
-        //将前端提交的密码进行md5加密
-        String md5Hex = DigestUtils.md5Hex(password);
-
-        if (user == null || !user.getPassword().equals(md5Hex)) {
-            //认证失败
+        //用户名不存在：统一返回凭证错误，避免用户名枚举
+        if (user == null) {
             return R.fail(ExceptionCode.JWT_USER_INVALID);
         }
-        //认证成功
+
+        //校验账号是否禁用
+        if (user.getStatus() == null || !user.getStatus()) {
+            return R.fail(ExceptionCode.JWT_USER_ENABLED);
+        }
+
+        //校验是否因密码错误次数过多被锁定
+        int errorNum = user.getPasswordErrorNum() == null ? 0 : user.getPasswordErrorNum();
+        if (errorNum >= authorityProperties.getMaxPasswordErrorNum()) {
+            return R.fail(ExceptionCode.JWT_USER_INVALID.getCode(), "密码错误次数过多，账户已锁定，请联系管理员重置");
+        }
+
+        //校验密码
+        if (!PasswordUtils.matches(password, user.getPassword())) {
+            //累加密码错误次数，达到阈值后下次登录将被锁定
+            userService.updatePasswordErrorNumById(user.getId());
+            return R.fail(ExceptionCode.JWT_USER_INVALID);
+        }
+
+        //认证成功：重置密码错误次数（仅当存在历史错误时）
+        if (errorNum > 0) {
+            userService.resetPassErrorNum(user.getId());
+        }
         return R.success(user);
     }
 

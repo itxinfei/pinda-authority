@@ -17,6 +17,6 @@ public interface UserResolveApi {
     /**
      * 根据id 查询用户详情
      */
-    @PostMapping(value = "/user/anno/id/{id}")
+    @PostMapping(value = "/inner/id/{id}")
     R<SysUser> getById(@PathVariable("id") Long id, @RequestBody UserQuery userQuery);
 }

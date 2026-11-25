@@ -1,16 +1,12 @@
 package com.itheima.pinda.authority.controller.common;
-import cn.hutool.core.util.StrUtil;
-import cn.hutool.extra.servlet.ServletUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.itheima.pinda.authority.entity.common.LoginLog;
-import com.itheima.pinda.authority.biz.service.auth.UserService;
 import com.itheima.pinda.authority.biz.service.common.LoginLogService;
 import com.itheima.pinda.base.BaseController;
 import com.itheima.pinda.base.R;
 import com.itheima.pinda.database.mybatis.conditions.Wraps;
 import com.itheima.pinda.database.mybatis.conditions.query.LbqWrapper;
 import com.itheima.pinda.log.annotation.SysLog;
-import com.itheima.pinda.log.util.AddressUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
@@ -19,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import javax.validation.constraints.NotBlank;
 import java.util.List;
 /**
  * 前端控制器
@@ -33,8 +28,6 @@ import java.util.List;
 public class LoginLogController extends BaseController {
     @Autowired
     private LoginLogService loginLogService;
-    @Autowired
-    private UserService userService;
     /**
      * 分页查询登录日志
      */
@@ -66,21 +59,6 @@ public class LoginLogController extends BaseController {
     @GetMapping("/{id}")
     public R<LoginLog> get(@PathVariable Long id) {
         return this.success(this.loginLogService.getById(id));
-    }
-
-    /**
-     * 新增登录日志
-     */
-    @ApiOperation(value = "新增登录日志", notes = "新增登录日志不为空的字段")
-    @GetMapping("/anno/login/{account}")
-    public R<LoginLog> save(@NotBlank(message = "用户名不能为为空") @PathVariable String account, @RequestParam(required = false, defaultValue = "登陆成功") String description) {
-        String ua = StrUtil.sub(this.request.getHeader("user-agent"), 0, 500);
-        String ip = ServletUtil.getClientIP(this.request);
-        String location = AddressUtil.getRegion(ip);
-        // update last login time
-        this.userService.updateLoginTime(account);
-        LoginLog loginLog = this.loginLogService.save(account, ua, ip, location, description);
-        return this.success(loginLog);
     }
 
     /**

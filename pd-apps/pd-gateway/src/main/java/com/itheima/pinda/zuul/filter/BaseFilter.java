@@ -20,6 +20,23 @@ public abstract class BaseFilter extends ZuulFilter {
     protected String zuulPrefix;
 
     /**
+     * 将请求 uri 归一化为「服务路径 + 资源路径」形式（去掉 context-path 与服务前缀）。
+     * <p>
+     * 例如 {@code /api/pd-auth/user/page} → {@code /user/page}。
+     * 网关的「忽略令牌判定」与「权限标识符计算」必须共用同一归一化结果，
+     * 故抽取到此共享方法，避免两处逻辑分叉导致判定错位。
+     *
+     * @param request 当前请求
+     * @return 归一化后的 uri
+     */
+    protected String normalizeUri(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        uri = StrUtil.subSuf(uri, zuulPrefix.length());
+        uri = StrUtil.subSuf(uri, uri.indexOf("/", 1));
+        return uri;
+    }
+
+    /**
      * 判断当前请求uri是否需要忽略（直接放行）
      *
      * @return
@@ -27,9 +44,7 @@ public abstract class BaseFilter extends ZuulFilter {
     protected boolean isIgnoreToken() {
         //动态获取当前请求的uri
         HttpServletRequest request = RequestContext.getCurrentContext().getRequest();
-        String uri = request.getRequestURI();
-        uri = StrUtil.subSuf(uri, zuulPrefix.length());
-        uri = StrUtil.subSuf(uri, uri.indexOf("/", 1));
+        String uri = normalizeUri(request);
         boolean ignoreToken = IgnoreTokenConfig.isIgnoreToken(uri);
         return ignoreToken;
     }

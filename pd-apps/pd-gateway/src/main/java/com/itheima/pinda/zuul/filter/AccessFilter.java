@@ -68,17 +68,20 @@ public class AccessFilter extends BaseFilter {
         //第2步：获取当前请求的请求方式和uri，拼接成GET/user/page这种形式，称为权限标识符
         HttpServletRequest request = RequestContext.getCurrentContext().getRequest();
         String method = request.getMethod();//GET POST PUT
-        String uri = request.getRequestURI();
-        uri = StrUtil.subSuf(uri, zuulPrefix.length());
-        uri = StrUtil.subSuf(uri, uri.indexOf("/", 1));
+        String uri = normalizeUri(request);
         String permission = method + uri;//GET/user/page
 
-        //第3步：从缓存中获取所有需要进行鉴权的资源(同样是由资源表的method字段值+url字段值拼接成)，如果没有获取到则通过Feign调用权限服务获取并放入缓存中
+        //第3步：从缓存中获取所有需要进行鉴权的资源
         CacheObject cacheObject = cacheChannel.get(CacheKey.RESOURCE, CacheKey.RESOURCE_NEED_TO_CHECK);
         List<String> list = (List<String>) cacheObject.getValue();
         if (list == null) {
             //缓存中没有相应数据
-            list = resourceApi.list().getData();
+            R<List> apiResult = resourceApi.list();
+            if (apiResult == null || apiResult.getIsError() || apiResult.getData() == null) {
+                errorResponse("获取资源列表失败", ExceptionCode.UNAUTHORIZED.getCode(), 200);
+                return null;
+            }
+            list = apiResult.getData();
             //放入缓存中
             if (list != null && list.size() > 0) {
                 cacheChannel.set(CacheKey.RESOURCE, CacheKey.RESOURCE_NEED_TO_CHECK, list);
@@ -86,9 +89,7 @@ public class AccessFilter extends BaseFilter {
         }
 
         //第4步：判断这些资源是否包含当前请求的权限标识符，如果不包含当前请求的权限标识符，则返回未经授权错误提示
-        long count = list.stream().filter((resource) -> {
-            return permission.startsWith(resource);
-        }).count();
+        long count = list.stream().filter(resource -> match(permission, resource)).count();
 
         if (count == 0) {
             //当前请求是一个未知请求，直接返回未授权异常信息
@@ -96,14 +97,20 @@ public class AccessFilter extends BaseFilter {
             return null;
         }
 
-        //第5步：如果包含当前的权限标识符，则从zuul header中取出用户id，根据用户id取出缓存中的用户拥有的权限，如果没有取到则通过Feign调用权限服务获取并放入缓存，判断用户拥有的权限是否包含当前请求的权限标识符
+        //第5步：如果包含当前的权限标识符，则从zuul header中取出用户id，根据用户id取出缓存中的用户拥有的权限
         String userId = RequestContext.getCurrentContext().getZuulRequestHeaders().get(BaseContextConstants.JWT_KEY_USER_ID);
+        if (StrUtil.isBlank(userId)) {
+            //用户标识缺失（未携带/解析失败 token），拒绝访问
+            errorResponse(ExceptionCode.UNAUTHORIZED.getMsg(), ExceptionCode.UNAUTHORIZED.getCode(), 200);
+            return null;
+        }
         List<String> visibleResource = (List<String>) cacheChannel.get(CacheKey.USER_RESOURCE, userId).getValue();
         if (visibleResource == null) {
             //缓存中不存在，需要通过接口远程调用权限服务来获取
             ResourceQueryDTO resourceQueryDTO = ResourceQueryDTO.builder().userId(new Long(userId)).build();
-            List<Resource> resourceList = resourceApi.visible(resourceQueryDTO).getData();
-            if (resourceList != null && resourceList.size() > 0) {
+            R<List<Resource>> apiResult = resourceApi.visible(resourceQueryDTO);
+            if (apiResult != null && !apiResult.getIsError() && apiResult.getData() != null) {
+                List<Resource> resourceList = apiResult.getData();
                 visibleResource = resourceList.stream().map((resource -> {
                     return resource.getMethod() + resource.getUrl();
                 })).collect(Collectors.toList());
@@ -112,10 +119,14 @@ public class AccessFilter extends BaseFilter {
             }
         }
 
+        if (visibleResource == null || visibleResource.isEmpty()) {
+            // 用户无任何权限，拒绝访问
+            errorResponse(ExceptionCode.UNAUTHORIZED.getMsg(), ExceptionCode.UNAUTHORIZED.getCode(), 200);
+            return null;
+        }
+
         //第6步：如果用户拥有的权限包含当前请求的权限标识符则说明当前用户拥有权限，直接放行
-        count = visibleResource.stream().filter((resource) -> {
-            return permission.startsWith(resource);
-        }).count();
+        count = visibleResource.stream().filter(resource -> match(permission, resource)).count();
 
         if (count > 0) {
             //当前用户拥有访问权限，直接放行
@@ -125,5 +136,37 @@ public class AccessFilter extends BaseFilter {
             errorResponse(ExceptionCode.UNAUTHORIZED.getMsg(), ExceptionCode.UNAUTHORIZED.getCode(), 200);
             return null;
         }
+    }
+
+    /**
+     * 权限标识符匹配（基于路径段边界的精确匹配）
+     * <p>
+     * 标识符格式为 方法+uri，如 {@code GET/user/5}、{@code POST/role/authority/*}。
+     * 匹配规则：
+     * 1. 方法与每一个路径段必须完全一致，杜绝 {@code GET/role} 误匹配 {@code GET/roleAuthority} 这类字符串前缀越权；
+     * 2. 资源段为 {@code *} 时匹配任意单一路径段（兼容资源表中 {@code /role/authority/*} 写法）；
+     * 3. 资源路径允许作为请求路径的段边界前缀（如 {@code /user} 授权其下 {@code /user/5}、{@code /user/page} 等子接口），
+     *    从而在不破坏现有资源注册模型的前提下修复越权绕过。
+     *
+     * @param permission 当前请求的权限标识符（方法+归一化uri）
+     * @param resource   已注册的资源标识符（方法+url，url 可含 * 通配段）
+     * @return 是否匹配
+     */
+    private boolean match(String permission, String resource) {
+        String[] pSeg = permission.split("/");
+        String[] rSeg = resource.split("/");
+        // 资源段数多于请求段数，必然无法匹配
+        if (rSeg.length > pSeg.length) {
+            return false;
+        }
+        for (int i = 0; i < rSeg.length; i++) {
+            if ("*".equals(rSeg[i])) {
+                continue;
+            }
+            if (!rSeg[i].equals(pSeg[i])) {
+                return false;
+            }
+        }
+        return true;
     }
 }
